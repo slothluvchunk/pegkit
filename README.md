@@ -2,7 +2,7 @@
 
 A zero-dependency TypeScript engine for guess-and-feedback logic games.
 
-PegKit handles the core mechanics shared by games like Mastermind, Wordle, Bulls & Cows, and Jotto — comparing a guess against a hidden sequence and producing structured feedback. You bring the content (letters, colors, numbers, emoji, whatever) and the UI. PegKit handles the logic.
+PegKit handles the core mechanics and logic shared by many "guess token and position" games — comparing a guess against a hidden sequence and producing structured feedback. You bring the content (letters, colors, numbers, emoji, whatever) and the UI. PegKit handles the logic.
 
 ## Why PegKit?
 
