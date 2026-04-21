@@ -11,8 +11,18 @@ The guess-a-sequence, get-feedback loop is a decades-old game mechanic that nobo
 ## Install
 
 ```bash
-npm install pegkit
+# Clone and install
+git clone https://github.com/YOUR_USERNAME/pegkit.git
+cd pegkit
+npm install
+
+# Run tests
+npm test
+
+# Build
+npm run build
 ```
+
 
 ## Quick Start
 
@@ -187,18 +197,6 @@ PegKit is the engine. Here's what you layer on top for different game types:
 
 Contributions are welcome. Please open an issue to discuss significant changes before submitting a PR.
 
-```bash
-# Clone and install
-git clone https://github.com/YOUR_USERNAME/pegkit.git
-cd pegkit
-npm install
-
-# Run tests
-npm test
-
-# Build
-npm run build
-```
 
 ## License
 
