@@ -1,0 +1,8 @@
+#Ignore the vibe bro
+.claude
+CLAUDE.md
+
+#NPM swag
+node_modules/
+npm-debug.log
+

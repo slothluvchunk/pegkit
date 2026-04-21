@@ -1,0 +1,29 @@
+{
+  "name": "pegkit",
+  "version": "0.1.0",
+  "description": "A TypeScript library for guess-and-feedback logic games",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": ["game", "wordle", "mastermind", "guess", "feedback"],
+  "license": "MIT"
+}
