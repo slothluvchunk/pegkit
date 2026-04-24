@@ -1,5 +1,5 @@
 {
-  "name": "@slothluvchunkpegkit",
+  "name": "@slothluvchunk/pegkit",
   "version": "0.1.0",
   "description": "A zero-dependency TypeScript Library for guess-and-feedback logic games",
   "type": "module",
