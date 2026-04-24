@@ -1,8 +1,12 @@
-#Ignore the vibe bro
+# Claude config
 .claude
 CLAUDE.md
 
-#NPM swag
-node_modules/
-npm-debug.log
+# Build output — published via `files` in package.json, not tracked in git
+dist/
 
+# Dependencies
+node_modules/
+
+# npm logs
+npm-debug.log*

@@ -1,72 +1,60 @@
 # PegKit
 
-A zero-dependency TypeScript engine for guess-and-feedback logic games.
+A zero-dependency TypeScript library for guess-and-feedback logic games.
 
-PegKit handles the core mechanics and logic shared by many "guess token and position" games — comparing a guess against a hidden sequence and producing structured feedback. You bring the content (letters, colors, numbers, emoji, whatever) and the UI. PegKit handles the logic.
+PegKit handles the core mechanics shared by many "guess token and position" games — comparing a guess against a hidden sequence and producing structured feedback. You bring the content (letters, colors, numbers, emoji, whatever) and the UI. PegKit handles the logic.
 
 ## Why PegKit?
 
-The guess-a-sequence, get-feedback loop is a decades-old game mechanic that nobody should have to reimplement from scratch — or worry about someone claiming as proprietary IP. PegKit provides a correct, tested, extensible engine so you can focus on building your game, not debugging edge cases in duplicate-symbol matching.
+The guess-a-sequence, get-feedback loop is a decades-old game mechanic that nobody should have to reimplement from scratch. PegKit provides a correct, tested, extensible engine so you can focus on building your game, not debugging edge cases in duplicate-symbol matching.
 
 ## Install
 
 ```bash
-# Clone and install
-git clone https://github.com/YOUR_USERNAME/pegkit.git
-cd pegkit
-npm install
-
-# Run tests
-npm test
-
-# Build
-npm run build
+npm install pegkit
 ```
-
 
 ## Quick Start
 
 ```typescript
-import { GameSession, GameConfig, SymbolPool } from 'pegkit';
+import { GameConfig, SecretSequence, GameSession } from 'pegkit';
 
-// Define valid symbols — letters, colors, numbers, whatever you want
-const pool = new SymbolPool(['A', 'B', 'C', 'D', 'E', 'F']);
-
-// Configure the game
 const config = new GameConfig({
   sequenceLength: 4,
-  maxGuesses: 10,
+  maxGuesses: 6,
+  symbolPool: ['A', 'B', 'C', 'D', 'E', 'F'],
   allowDuplicates: true,
-  symbolPool: pool,
 });
 
-// Start a session with a secret sequence
-const session = new GameSession(config, ['A', 'B', 'C', 'D']);
+const secret = new SecretSequence(['A', 'B', 'C', 'D'], config);
+const session = new GameSession(config, secret);
 
-// Submit a guess
 const result = session.submitGuess(['A', 'C', 'B', 'F']);
 
-console.log(result.feedback.perPosition);
-// [
-//   { symbol: 'A', status: 'exact' },    — right symbol, right spot
-//   { symbol: 'C', status: 'present' },  — right symbol, wrong spot
-//   { symbol: 'B', status: 'present' },  — right symbol, wrong spot
-//   { symbol: 'F', status: 'absent' },   — not in the secret
-// ]
+if (typeof result !== 'string') {
+  console.log(result.feedback.positions);
+  // [
+  //   { position: 0, symbol: 'A', result: 'exact' },    — right symbol, right spot
+  //   { position: 1, symbol: 'C', result: 'present' },  — right symbol, wrong spot
+  //   { position: 2, symbol: 'B', result: 'present' },  — right symbol, wrong spot
+  //   { position: 3, symbol: 'F', result: 'absent' },   — not in the secret
+  // ]
 
-console.log(result.feedback.summary);
-// { exact: 1, present: 2, absent: 1 }
+  console.log(result.feedback.exactCount);   // 1
+  console.log(result.feedback.presentCount); // 2
+  console.log(result.feedback.absentCount);  // 1
+}
 
-console.log(session.state); // 'in-progress'
+console.log(session.status); // 'in-progress'
 ```
 
 ## Core Concepts
 
-**Symbols are opaque tokens.** PegKit doesn't know or care whether your symbols are letters, hex colors, or emoji. Anything representable as a string works. This means the same engine can power a word-guessing game, a color-code-breaking game, or something entirely new.
+**Symbols are opaque tokens.** PegKit doesn't know or care whether your symbols are letters, hex colors, or emoji. Anything representable as a string works. The same engine can power a word-guessing game, a color-code-breaking game, or something entirely new.
 
-**No content ships with the library.** PegKit has no word lists, no dictionaries, no color palettes. You provide the `SymbolPool` (the set of valid symbols) and the secret sequence. If your game needs to validate that a guess is "a real word," inject a validator function through the config — PegKit will call it, but the dictionary is yours.
+**No content ships with the library.** PegKit has no word lists, no dictionaries, no color palettes. You provide the symbol pool (the set of valid symbols) and the secret sequence. If your game needs to validate that a guess is "a real word," inject a validator function through the config — PegKit will call it, but the dictionary is yours.
 
-**Everything is serializable.** Every class supports JSON serialization and deserialization, so you can persist and restore game state however you like — localStorage, a database, a URL parameter. PegKit never touches storage.
+**Everything is serializable.** Every class supports `toJSON()`, so you can persist and restore game state however you like — `localStorage`, a database, a URL parameter. PegKit never touches storage.
 
 ## Duplicate Handling
 
@@ -76,13 +64,13 @@ The comparison algorithm correctly handles duplicate symbols, which is the edge 
 // Secret: [A, B, A]
 // Guess:  [A, A, C]
 //
-// Position 0: A vs A → exact match
+// Position 0: A vs A → exact
 // Position 1: A vs B → A is present (matches the secret's position-2 A)
 // Position 2: C vs A → absent
 //
 // Result: 1 exact, 1 present, 1 absent
-// The second A in the secret is consumed by the present match,
-// so it won't be double-counted.
+// The second A in the secret is consumed by the present match
+// and won't be double-counted.
 ```
 
 ## API Reference
@@ -91,23 +79,34 @@ The comparison algorithm correctly handles duplicate symbols, which is the edge 
 
 Defines the rules for a game instance.
 
+```typescript
+const config = new GameConfig({
+  sequenceLength: 4,
+  maxGuesses: 6,
+  symbolPool: ['A', 'B', 'C', 'D', 'E', 'F'],
+  allowDuplicates: true,               // optional, default true
+  validator: (symbols) => isRealWord(symbols.join('')), // optional
+});
+```
+
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `sequenceLength` | `number` | required | How many symbols in the secret |
 | `maxGuesses` | `number` | required | Maximum attempts allowed |
+| `symbolPool` | `string[]` | required | The set of valid symbols (no duplicates) |
 | `allowDuplicates` | `boolean` | `true` | Whether the secret/guesses can repeat symbols |
-| `symbolPool` | `SymbolPool` | required | The set of valid symbols |
-| `validator` | `(guess: string[]) => boolean` | `undefined` | Optional custom validation (e.g., "is this a real word?") |
+| `validator` | `(symbols: readonly string[]) => boolean` | `undefined` | Optional custom validation (e.g. "is this a real word?") |
 
-### `SymbolPool`
+### `SecretSequence`
 
-Wraps the set of valid symbols and provides validation.
+Holds the answer and exposes comparison logic. Validates that the secret matches the config on construction.
 
 ```typescript
-const pool = new SymbolPool(['red', 'blue', 'green', 'yellow']);
-pool.isValid('red');    // true
-pool.isValid('purple'); // false
-pool.size;              // 4
+const secret = new SecretSequence(['A', 'B', 'C', 'D'], config);
+secret.length;       // 4
+secret.toJSON();     // ['A', 'B', 'C', 'D']
+
+const feedback = secret.compare(['A', 'C', 'B', 'F']);
 ```
 
 ### `GameSession`
@@ -117,20 +116,36 @@ Orchestrates a single play-through.
 ```typescript
 const session = new GameSession(config, secret);
 
-session.submitGuess(symbols);  // Returns Guess with Feedback
-session.state;                 // 'in-progress' | 'won' | 'lost'
-session.guesses;               // Array of past Guess objects
-session.remainingGuesses;      // Number
-session.isOver;                // Boolean
+session.submitGuess(symbols); // Returns Guess on success, or InvalidGuessReason string on failure
+session.status;               // 'in-progress' | 'won' | 'lost'
+session.guesses;              // readonly Guess[]
+session.guessCount;           // number
+session.remainingGuesses;     // number
 ```
+
+`submitGuess` returns one of these strings if the guess is rejected:
+
+| Reason | When |
+|--------|------|
+| `'wrong-length'` | Guess length doesn't match `sequenceLength` |
+| `'symbol-not-in-pool'` | Guess contains a symbol not in `symbolPool` |
+| `'duplicate-not-allowed'` | Guess repeats a symbol when `allowDuplicates` is `false` |
+| `'validation-failed'` | Custom `validator` returned `false` |
+| `'game-over'` | Game has already ended |
 
 ### `Feedback`
 
 The result of comparing a guess to the secret. This is the primary contract your UI consumes.
 
 ```typescript
-feedback.perPosition;  // Array of { symbol, status: 'exact' | 'present' | 'absent' }
-feedback.summary;      // { exact: number, present: number, absent: number }
+feedback.positions;      // readonly PositionFeedback[]
+// Each entry: { position: number, symbol: string, result: 'exact' | 'present' | 'absent' }
+
+feedback.exactCount;     // number of exact matches
+feedback.presentCount;   // number of present (right symbol, wrong position) matches
+feedback.absentCount;    // number of absent symbols
+feedback.isAllExact();   // true if the guess is correct
+feedback.toJSON();       // returns positions array
 ```
 
 ### `Guess`
@@ -138,36 +153,62 @@ feedback.summary;      // { exact: number, present: number, absent: number }
 An immutable submitted attempt.
 
 ```typescript
-guess.symbols;    // The submitted sequence
-guess.feedback;   // The Feedback object
-guess.timestamp;  // When it was submitted
+guess.symbols;      // readonly string[] — the submitted sequence
+guess.feedback;     // Feedback object
+guess.submittedAt;  // number — Date.now() timestamp
+guess.toJSON();     // { symbols, feedback, submittedAt }
 ```
 
 ### Events
 
-GameSession emits events you can listen to:
+`GameSession` emits typed events you can subscribe to. `on()` returns an unsubscribe function.
 
 ```typescript
-session.on('guess', (guess: Guess) => { /* update UI */ });
-session.on('win', (session: GameSession) => { /* celebrate */ });
-session.on('loss', (session: GameSession) => { /* commiserate */ });
-session.on('invalid-guess', (reason: string) => { /* show error */ });
+const unsub = session.on('guess-submitted', ({ guess, guessNumber }) => {
+  // fired after every valid guess
+});
+
+session.on('game-won', ({ guesses, guessCount }) => {
+  // fired when the correct sequence is guessed
+});
+
+session.on('game-lost', ({ guesses, secret }) => {
+  // fired when max guesses are exhausted
+});
+
+session.on('invalid-guess', ({ symbols, reason }) => {
+  // fired on every rejected submitGuess call
+});
+
+unsub(); // remove a listener
 ```
 
-### Statistics
+### `Statistics`
 
-Post-game and cross-game analytics that consume sessions without influencing them.
+Post-game analytics that consume sessions without influencing them. `StatisticsSummary` is a plain serializable object — wire persistence to wherever you like.
 
 ```typescript
 import { Statistics } from 'pegkit';
 
-const stats = new Statistics();
-stats.record(session);
+// Compute from an array of completed sessions:
+const summary = Statistics.compute(sessions);
+// {
+//   totalGames: 10,
+//   wins: 7,
+//   losses: 3,
+//   winRate: 0.7,
+//   currentStreak: 3,
+//   maxStreak: 5,
+//   guessDistribution: { 3: 2, 4: 3, 5: 1, 6: 1 },
+//   averageGuessesOnWin: 4.14
+// }
 
-stats.gamesPlayed;        // Total games
-stats.winRate;            // Percentage
-stats.currentStreak;      // Consecutive wins
-stats.guessDistribution;  // Map of guess-number → count
+// Or incrementally update a stored summary with one new session:
+const next = Statistics.update(summary, completedSession);
+
+// StatisticsSummary is fully JSON-serializable — persist however you want:
+// localStorage.setItem('stats', JSON.stringify(next));
+// const saved = JSON.parse(localStorage.getItem('stats') ?? 'null');
 ```
 
 ## What PegKit Is Not
@@ -183,20 +224,17 @@ PegKit deliberately excludes:
 
 ## Building Games With PegKit
 
-PegKit is the engine. Here's what you layer on top for different game types:
+**Wordle-style word game:** Provide a `symbolPool` of `a-z`, set `sequenceLength: 5`, inject a dictionary validator, and build your tile-grid UI on top of the `Feedback` objects.
 
-**Wordle-style word game:** Provide a `SymbolPool` of `a-z`, set `sequenceLength: 5`, inject a dictionary validator, and build your tile-grid UI on top of the Feedback objects.
+**Mastermind-style code breaker:** Provide a `symbolPool` of color names, set `allowDuplicates: true`, and use `exactCount` / `presentCount` (just the counts, no per-position reveal) for the classic black-peg/white-peg display.
 
-**Mastermind-style code breaker:** Provide a `SymbolPool` of color names, set `allowDuplicates: true`, and use `feedback.summary` (just the counts, no per-position reveal) for the classic black-peg/white-peg display.
-
-**Number puzzle:** Provide a `SymbolPool` of `0-9`, set your length, and you've got Bulls & Cows.
+**Number puzzle:** Provide a `symbolPool` of `['0','1','2','3','4','5','6','7','8','9']`, set your length, and you've got Bulls & Cows.
 
 **Something new:** Emoji sequences, musical notes, hex color codes — if it's a string, PegKit can compare it.
 
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss significant changes before submitting a PR.
-
 
 ## License
 

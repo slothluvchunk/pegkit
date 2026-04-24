@@ -1,7 +1,7 @@
 {
   "name": "pegkit",
   "version": "0.1.0",
-  "description": "A TypeScript library for guess-and-feedback logic games",
+  "description": "A zero-dependency TypeScript Library for guess-and-feedback logic games",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,19 +11,44 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "game",
+    "wordle",
+    "mastermind",
+    "mastermind",
+    "bulls-and-cows",
+    "guess",
+    "feedback",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Jonathan Finger <jonathan@tollidee.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slothluvchunk/pegkit"
+  },
+  "bugs": {
+    "url": "https://github.com/slothluvchunk/pegkit/issues"
+  },
+  "homepage": "https://github.com/slothluvchunk/pegkit#readme",
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
-  },
-  "files": [
-    "dist"
-  ],
-  "keywords": ["game", "wordle", "mastermind", "guess", "feedback"],
-  "license": "MIT"
+  }
 }
